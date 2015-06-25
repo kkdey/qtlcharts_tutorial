@@ -1,0 +1,120 @@
+---
+title: "qtlcharts - Karl Broman"
+author: "StephensLab"
+date: "June 24, 2015"
+output: html_document
+---
+
+Karl Broman has recently developed a cool R package called **qtlcharts**. The installation instructions are as follows:
+
+```{r indtallation, eval=FALSE, echo=TRUE}
+install.packages(c("qtl","htmlwidgets","devtools"))
+library(devtools)
+install_github("kbroman/qtlcharts", build_vignettes=TRUE);
+
+```
+
+For getting a good idea about this package, some recommendations are 
+
+- [qtlcharts webpage](http://kbroman.org/qtlcharts/)
+
+- [qtlcharts paper](http://www.ncbi.nlm.nih.gov/pubmed/25527287)
+
+We start by loading the package into R
+
+```{r load-package, echo=TRUE, eval=TRUE}
+
+library(qtlcharts)
+
+```
+
+I present a demo of how we applied this package to our use for the eQTLs analysis. The data is a toy example data. We use two datasets.
+
+```{r datasets, echo=TRUE, eval=TRUE}
+
+gene_data = read.table("../data/gene_expression_data.txt");
+eqtl_data = read.table("../data/gene_eqtl_data.txt");
+
+## check if the gene names match
+
+tissue_names=as.vector(as.matrix(read.table("../data/tissue_id_eqtl_study.txt")));
+
+```
+
+### iplot (gene vs gene)
+
+scatter plot between two genes based on tissue wide expression values (log scale).
+
+```{r iplot, echo=TRUE, eval=TRUE}
+
+scatter_plot <- iplot(as.numeric(log(gene_data+1)[2,]),as.numeric(log(gene_data+1)[3,]),rep(1,44), tissue_names)
+scatter_plot
+
+```
+
+### iplotCurves (genes against tissues)
+
+A plot of gene expression across tissues for all genes and a plot of eQTL effect sizes across tissues for all eQTLs.
+
+```{r iplotCurves, echo=TRUE, eval=TRUE}
+
+geneplot <- iplotCurves(log(gene_data+1),chartOpts=list(curves_xlab="Tissue",curves_ylab="log gene expression"))
+htmlwidgets::saveWidget(geneplot, file="../plots/gene_expr_Curves.html",selfcontained=FALSE);
+
+eqtlplot <- iplotCurves(eqtl_data,chartOpts=list(curves_xlab="Tissue",curves_ylab="eQTL strength effect"))
+htmlwidgets::saveWidget(eqtlplot, file="../plots/eqtl_Curves.html",selfcontained=FALSE);
+
+```
+
+### iplotCorr (correlation structure)
+
+construct a correlation heat map of the tissues based on gene expression data
+
+```{r iplotCorr, echo=TRUE, eval=TRUE}
+
+iplotCorr(gene_data,chartOpts=list(corcolors = c("white", "white","white", "crimson"),zlim=c(0,0.5,0.7,1),margin = list(left=150, top=40, right=3, bottom=70, inner=5)),reorder=TRUE)
+
+```
+
+### iBoxplot (box plot of the values)
+
+construct a box plot of the effect sizes across different tissues for one eQTL.
+
+```{r boxplot, echo=TRUE, eval=TRUE}
+
+box_plot <- iboxplot(t(log(gene_data+1)),qu=c(0.25,0.05,0.01),chartOpts = list(qucolors=c("black","green","red","blue")),orderByMedian = FALSE)
+htmlwidgets::saveWidget(box_plot, file="../plots/boxmap.html",selfcontained=FALSE);
+
+
+```
+
+### iplotMap
+
+creates an interactive genetic map.
+
+```{r iplotMap}
+library(qtl)
+data(hyper)
+map <- pull.map(hyper)
+genetic_map <- iplotMap(map)
+htmlwidgets::saveWidget(genetic_map, file="../plots/genemap.html",selfcontained=FALSE);
+
+```
+
+### iHeatMap
+
+construct a heat map of the tissues along with pixels linked to plots of horizontal and vertical slices. 
+
+```{r iHeatMap, echo=TRUE, eval=TRUE}
+
+cor_mat=cor(log(gene_data)+1);
+x=1:44; y=1:44;
+
+heatmap_plot <- iheatmap(cor_mat,x,y,chartOpts=list(corcolors = c("green", "white","crimson"),zlim=c(-1,0,1),margin = list(left=150, top=40, right=3, bottom=70, inner=5)))
+htmlwidgets::saveWidget(heatmap_plot, file="../plots/heatmap.html",selfcontained=FALSE);
+
+```
+
+
+
+
